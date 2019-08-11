@@ -65,11 +65,11 @@ AccountController.prototype.register = function (newUser, callback) {
     if (user) {
       return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_ALREADY_EXISTS } }))
     } else {
-      newUser.save(function (err, user, numberAffected) {
+      newUser.save(function (err, user) {
+        //  console.log(user)
         if (err) {
           return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }))
-        }
-        if (numberAffected === 1) {
+        } else {
           var userProfileModel = new me.UserProfileModel({
             email: user.email,
             firstName: user.firstName,
@@ -81,9 +81,22 @@ AccountController.prototype.register = function (newUser, callback) {
               userProfileModel: userProfileModel
             }
           }))
-        } else {
-          return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.COULD_NOT_CREATE_USER } }))
         }
+        // if (numberAffected === 1) {
+        //   var userProfileModel = new me.UserProfileModel({
+        //     email: user.email,
+        //     firstName: user.firstName,
+        //     lastName: user.lastName
+        //   })
+        //   return callback(err, new me.ApiResponse({
+        //     success: true,
+        //     extras: {
+        //       userProfileModel: userProfileModel
+        //     }
+        //   }))
+        // } else {
+        //   return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.COULD_NOT_CREATE_USER } }))
+        // }
       })
     }
   })
