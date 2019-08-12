@@ -28,8 +28,9 @@ AccountController.prototype.login = function (email, password, callback) {
       return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }))
     }
     if (user) {
-      me.hashPassword(password, 10, function (err, passwordHash) {
-        if (this.bcrypt.compareSync(passwordHash, user.passwordHash)) {
+      user.comparePassword(password, function (err, isMatch) {
+        if (err) throw err
+        if (isMatch) {
           const userProfileModel = new me.UserProfileModel({
             email: user.email,
             firstName: user.firstName,
@@ -46,6 +47,24 @@ AccountController.prototype.login = function (email, password, callback) {
           return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.INVALID_PWD } }))
         }
       })
+      // me.hashPassword(password, 10, function (err, passwordHash) {
+      //   if (this.bcrypt.compareSync(passwordHash, user.passwordHash)) {
+      //     const userProfileModel = new me.UserProfileModel({
+      //       email: user.email,
+      //       firstName: user.firstName,
+      //       lastName: user.lastName
+      //     })
+      //     me.session.userProfileModel = userProfileModel
+      //     return callback(err, new me.ApiResponse({
+      //       success: true,
+      //       extras: {
+      //         userProfileModel: userProfileModel
+      //       }
+      //     }))
+      //   } else {
+      //     return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.INVALID_PWD } }))
+      //   }
+      // })
     } else {
       return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_NOT_FOUND } }))
     }
@@ -66,7 +85,6 @@ AccountController.prototype.register = function (newUser, callback) {
       return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_ALREADY_EXISTS } }))
     } else {
       newUser.save(function (err, user) {
-        //  console.log(user)
         if (err) {
           return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }))
         } else {

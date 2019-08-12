@@ -49,3 +49,49 @@ describe('Registration Functionality', function () {
     })
   })
 })
+
+describe('Login Functionality', function () {
+  const testUSerData = { // assume this test user is already in database
+    email: `hello@example.com`,
+    password: 'Hello1234'
+  }
+
+  beforeEach(function (done) {
+    const User = require('../models/user')
+    controller = new AccountController(User, session)
+    done()
+  })
+  it('should be a function', function () {
+    controller.login.should.be.a('function')
+  })
+  it('Should create a user session when successful', function () {
+    controller.login(testUSerData.email, testUSerData.pass, function (err, ApiResponse) {
+      if (err) throw err
+      ApiResponse.success.should.equal(true)
+      expect(ApiMessages.extras.userProfileModel).to.equal(controller.getSession().userProfileModel)
+    }
+    )
+  })
+  it('should return "Email not found"', function () {
+    controller.login('does@not.exist', testUSerData.pass, function (err, ApiResponse) {
+      if (err) throw err
+      ApiResponse.success.should.equal(false)
+      ApiResponse.extras.msg.should.equal(ApiMessages.EMAIL_NOT_FOUND)
+    })
+  })
+  it('should return "Invalid Password"', function () {
+    controller.login(testUSerData.email, 'invalidPassword', function (err, ApiResponse) {
+      if (err) throw err
+      ApiResponse.success.should.equal(false)
+      ApiResponse.extras.msg.should.equal(ApiMessages.INVALID_PWD)
+    })
+  })
+})
+
+describe('Logout Functionality', function () {
+  it('should destroy a user session', function () {
+    controller.logout()
+    const sessionTest = controller.getSession().userProfileModel
+    expect(sessionTest).to.be.undefined
+  })
+})
