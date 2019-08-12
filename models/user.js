@@ -1,14 +1,12 @@
 const mongoose = require('mongoose')
+const { passwordComplexity } = require('../config/compliance.config')
+const { minPasswordLength } = require('../config/compliance.config')
 const { maxLoginAttempts } = require('../config/compliance.config')
-// const { bruteForcelockTime } = require('../config/compliance.config')
 const { permanentLockTime } = require('../config/compliance.config')
 
 const Schema = mongoose.Schema
 const bcrypt = require('bcryptjs')
 const SALT_WORK_FACTOR = 10
-const MAX_LOGIN_ATTEMPTS = maxLoginAttempts
-// const BRUTE_FORCE_LOCK_TIME = bruteForcelockTime
-const PERMANENT_LOCK_TIME = permanentLockTime
 
 const UserSchema = new Schema({
   email: {
@@ -24,7 +22,17 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: true
+    required: true,
+    minlength: minPasswordLength,
+    validate: {
+      validator: function (password) {
+        const requiredComplexity = new RegExp(passwordComplexity)
+        return requiredComplexity.test(password)
+      },
+      message: function (props) {
+        return `${props.value} is not a valid password. Password must have uppercase, and lowercase letters and a number`
+      }
+    }
   },
   loginAttempts: {
     type: Number,
@@ -80,8 +88,8 @@ UserSchema.methods.incLoginAttempts = function (cb) {
   // otherwise we're incrementing
   var updates = { $inc: { loginAttempts: 1 } }
   // lock the account if we've reached max attempts and it's not locked already
-  if (this.loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS && !this.isLocked) {
-    updates.$set = { lockUntil: Date.now() + PERMANENT_LOCK_TIME }
+  if (this.loginAttempts + 1 >= maxLoginAttempts && !this.isLocked) {
+    updates.$set = { lockUntil: Date.now() + permanentLockTime }
   }
   return this.update(updates, cb)
 }
