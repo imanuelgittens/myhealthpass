@@ -35,7 +35,7 @@ mongoose.connect(connectionString, { useNewUrlParser: true }).then(
     //   if (err) throw err
     //   console.log(apiResponse)
     // })
-    controller.login(user1.email, 'invalid', function (err, apiResponse) {
+    controller.login('does@not.exist', 'invalid', 'requestSignature', function (err, apiResponse) {
       if (err) throw err
       console.log(apiResponse)
     })

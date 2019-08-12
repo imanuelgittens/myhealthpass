@@ -51,7 +51,7 @@ describe('Registration Functionality', function () {
 })
 
 describe('Login Functionality', function () {
-  const testUSerData = { // assume this test user is already in database
+  const testUser = { // assume this test user is already in database
     email: `hello@example.com`,
     password: 'Hello1234'
   }
@@ -65,7 +65,7 @@ describe('Login Functionality', function () {
     controller.login.should.be.a('function')
   })
   it('Should create a user session when successful', function () {
-    controller.login(testUSerData.email, testUSerData.pass, function (err, ApiResponse) {
+    controller.login(testUser.email, testUser.pass, 'requestsignature', function (err, ApiResponse) {
       if (err) throw err
       ApiResponse.success.should.equal(true)
       expect(ApiMessages.extras.userProfileModel).to.equal(controller.getSession().userProfileModel)
@@ -73,17 +73,31 @@ describe('Login Functionality', function () {
     )
   })
   it('should return "Email not found"', function () {
-    controller.login('does@not.exist', testUSerData.pass, function (err, ApiResponse) {
+    controller.login('does@not.exist', testUser.pass, 'requestsignature', function (err, ApiResponse) {
       if (err) throw err
       ApiResponse.success.should.equal(false)
       ApiResponse.extras.msg.should.equal(ApiMessages.EMAIL_NOT_FOUND)
     })
   })
   it('should return "Invalid Password"', function () {
-    controller.login(testUSerData.email, 'invalidPassword', function (err, ApiResponse) {
+    controller.login(testUser.email, 'invalidPassword', 'requestsignature', function (err, ApiResponse) {
       if (err) throw err
       ApiResponse.success.should.equal(false)
       ApiResponse.extras.msg.should.equal(ApiMessages.INVALID_PWD)
+    })
+  })
+  // it('should return "Database Error" for brute force lock', function () {
+  //   controller.login(testUser.email, testUser.pass, 'requestsignature', function (err, ApiResponse) {
+  //     if (err) throw err
+  //     ApiResponse.success.should.equal(false)
+  //     ApiResponse.extras.msg.should.equal(ApiMessages.DB_ERROR)
+  //   })
+  // })
+  it('should return "Database Error" for locked user accounts', function () {
+    controller.login(testUser.email, testUser.pass, 'requestsignature', function (err, ApiResponse) {
+      if (err) throw err
+      ApiResponse.success.should.equal(false)
+      ApiResponse.extras.msg.should.equal(ApiMessages.DB_ERROR)
     })
   })
 })
