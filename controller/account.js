@@ -1,4 +1,5 @@
-const { sessionInactivityLength } = require('../config/compliance.config')
+// const { sessionInactivityLength } = require('../config/compliance.config')
+// const { minPasswordLength } = require('../config/compliance.config')
 
 const AccountController = function (userModel, session) {
   this.bcrypt = require('bcryptjs')
@@ -6,6 +7,8 @@ const AccountController = function (userModel, session) {
   this.ApiMessages = require('../models/api-messages.js')
   this.UserProfileModel = require('../models/user-profile.js')
   this.userModel = userModel
+  this.compliance = require('../config/compliance.config')
+  this.validator = require('validator')
   this.failedLoginModel = require('../models/failed-logins')
   this.session = session
 }
@@ -76,7 +79,7 @@ AccountController.prototype.login = function (email, password, requestSignature,
                 lastName: user.lastName
               })
               me.session.userProfileModel = userProfileModel
-              me.session.expires = Date.now() + sessionInactivityLength
+              me.session.expires = Date.now() + me.compliance.sessionInactivityLength
               return callback(err, new me.ApiResponse({
                 success: true,
                 extras: {
@@ -98,6 +101,17 @@ AccountController.prototype.login = function (email, password, requestSignature,
   })
 }
 
+AccountController.prototype.validateEmail = function (user) {
+  const me = this
+  return me.validator.isEmail(user.email)
+}
+
+AccountController.prototype.validatePassword = function (user) {
+  const me = this
+  const requiredComplexity = new RegExp(me.compliance.passwordComplexity)
+  return me.validator.isLength(user.password, { min: 8 }) && requiredComplexity.test(user.password)
+}
+
 AccountController.prototype.logout = function () {
   if (this.session.userProfileModel) delete this.session.userProfileModel
 }
@@ -111,6 +125,15 @@ AccountController.prototype.register = function (newUser, callback) {
     if (user) {
       return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_ALREADY_EXISTS } }))
     } else {
+      // validate email
+      if (!me.validateEmail(user)) {
+        return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.INVALID_EMAIL } }))
+      }
+
+      // validate password
+      if (!me.validatePassword(user)) {
+        return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.INVALID_PWD } }))
+      }
       newUser.save(function (err, user) {
         if (err) {
           return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.DB_ERROR } }))
@@ -123,8 +146,8 @@ AccountController.prototype.register = function (newUser, callback) {
 
           // set login session
 
-          me.session.userProfileModel = userProfileModel
-          me.session.expires = Date.now() + sessionInactivityLength
+          // me.session.userProfileModel = userProfileModel
+          // me.session.expires = Date.now() + sessionInactivityLength
 
           // return userProfile for display on the front end
 

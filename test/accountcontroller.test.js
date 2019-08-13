@@ -6,10 +6,9 @@ const should = chai.should()
 
 const AccountController = require('../controller/account')
 
-const ApiResponse = require('../models/api-response.js')
 const ApiMessages = require('../models/api-messages.js')
-const UserProfileModel = require('../models/user-profile.js')
 const User = require('../models/user')
+// const compliance = requi
 
 let controller = {}
 const session = {}
@@ -36,8 +35,34 @@ describe('Registration Functionality', function () {
       ApiResponse.extras.msg.should.equal(ApiMessages.EMAIL_ALREADY_EXISTS)
     })
   })
+  it('should return an error if password does not meet requirements', function () {
+    const testUser = new User({
+      email: `hello@example${Math.floor(Math.random() * 1000)}.com`, // add random number in email because it should be unique
+      firstName: 'John',
+      lastName: 'Doe',
+      password: 'hello'
+    })
+    controller.register(testUser, function (err, ApiResponse) {
+      if (err) throw err
+      ApiResponse.success.should.equal(false)
+      ApiResponse.extras.msg.should.equal(ApiMessages.INVALID_PWD)
+    })
+  })
+  it('should return an error if email is not valid', function () {
+    const testUser = new User({
+      email: 'hello',
+      firstName: 'John',
+      lastName: 'Doe',
+      password: 'helloH1234'
+    })
+    controller.register(testUser, function (err, ApiResponse) {
+      if (err) throw err
+      ApiResponse.success.should.equal(false)
+      ApiResponse.extras.msg.should.equal(ApiMessages.INVALID_EMAIL)
+    })
+  })
   it('should register a valid user', function () {
-    const testUser = new User({ // assume this test user is already in database
+    const testUser = new User({
       email: `hello@example${Math.floor(Math.random() * 1000)}.com`, // add random number in email because it should be unique
       firstName: 'John',
       lastName: 'Doe',
@@ -86,13 +111,6 @@ describe('Login Functionality', function () {
       ApiResponse.extras.msg.should.equal(ApiMessages.INVALID_PWD)
     })
   })
-  // it('should return "Database Error" for brute force lock', function () {
-  //   controller.login(testUser.email, testUser.pass, 'requestsignature', function (err, ApiResponse) {
-  //     if (err) throw err
-  //     ApiResponse.success.should.equal(false)
-  //     ApiResponse.extras.msg.should.equal(ApiMessages.DB_ERROR)
-  //   })
-  // })
   it('should return "Database Error" for locked user accounts', function () {
     controller.login(testUser.email, testUser.pass, 'requestsignature', function (err, ApiResponse) {
       if (err) throw err
@@ -101,6 +119,23 @@ describe('Login Functionality', function () {
     })
   })
 })
+
+// describe('Brute Force Functionality', function () {
+//   const testUser = { // assume this test user is already in database
+//     email: `hello@example.com`,
+//     password: 'Hello1234'
+//   }
+//   beforeEach(function (done) {
+//     const User = require('../models/user')
+//     controller = new AccountController(User, session)
+//     done()
+//   })
+//   it('should return an error for brute force attempts', function () {
+//     controller.logout()
+//     const sessionTest = controller.getSession().userProfileModel
+//     expect(sessionTest).to.be.undefined
+//   })
+// })
 
 describe('Logout Functionality', function () {
   it('should destroy a user session', function () {

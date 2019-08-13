@@ -8,4 +8,5 @@ ApiMessages.EMAIL_ALREADY_EXISTS = 4
 ApiMessages.COULD_NOT_CREATE_USER = 5
 ApiMessages.LOGIN_PREVENTED = 6
 ApiMessages.ACCOUNT_LOCKED = 7
+ApiMessages.INVALID_EMAIL = 8
 module.exports = ApiMessages

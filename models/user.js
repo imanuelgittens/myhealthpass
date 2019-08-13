@@ -1,6 +1,4 @@
 const mongoose = require('mongoose')
-const { passwordComplexity } = require('../config/compliance.config')
-const { minPasswordLength } = require('../config/compliance.config')
 const { maxLoginAttempts } = require('../config/compliance.config')
 const { permanentLockTime } = require('../config/compliance.config')
 
@@ -22,17 +20,7 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: true,
-    minlength: minPasswordLength,
-    validate: {
-      validator: function (password) {
-        const requiredComplexity = new RegExp(passwordComplexity)
-        return requiredComplexity.test(password)
-      },
-      message: function (props) {
-        return `${props.value} is not a valid password. Password must have uppercase, and lowercase letters and a number`
-      }
-    }
+    required: true
   },
   loginAttempts: {
     type: Number,
