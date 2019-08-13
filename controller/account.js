@@ -1,6 +1,3 @@
-// const { sessionInactivityLength } = require('../config/compliance.config')
-// const { minPasswordLength } = require('../config/compliance.config')
-
 const AccountController = function (userModel, session) {
   this.bcrypt = require('bcryptjs')
   this.ApiResponse = require('../models/api-response.js')
