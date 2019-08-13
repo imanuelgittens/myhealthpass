@@ -126,12 +126,12 @@ AccountController.prototype.register = function (newUser, callback) {
       return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.EMAIL_ALREADY_EXISTS } }))
     } else {
       // validate email
-      if (!me.validateEmail(user)) {
+      if (!me.validateEmail(newUser)) {
         return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.INVALID_EMAIL } }))
       }
 
       // validate password
-      if (!me.validatePassword(user)) {
+      if (!me.validatePassword(newUser)) {
         return callback(err, new me.ApiResponse({ success: false, extras: { msg: me.ApiMessages.INVALID_PWD } }))
       }
       newUser.save(function (err, user) {
@@ -143,11 +143,6 @@ AccountController.prototype.register = function (newUser, callback) {
             firstName: user.firstName,
             lastName: user.lastName
           })
-
-          // set login session
-
-          // me.session.userProfileModel = userProfileModel
-          // me.session.expires = Date.now() + sessionInactivityLength
 
           // return userProfile for display on the front end
 

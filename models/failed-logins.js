@@ -34,7 +34,7 @@ FailedLoginSchema.methods.incLoginAttempts = function (cb) {
     }, cb)
   }
   // otherwise we're incrementing
-  var updates = { $inc: { loginAttempts: 1 } }
+  const updates = { $inc: { loginAttempts: 1 } }
   // lock the login functionality if we've reached max attempts and it's not locked already
   if (this.loginAttempts + 1 >= maxBFLoginAttempts && !this.isLocked) {
     updates.$set = { lockUntil: Date.now() + bruteForceLockoutTime }

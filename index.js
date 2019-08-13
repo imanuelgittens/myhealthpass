@@ -37,9 +37,10 @@ mongoose.connect(connectionString, { useNewUrlParser: true }).then(
     const controller = new AccountController(User, {})
 
     // console.log(user)
-    controller.register(user, function (apiResponse) {
-      // if (err) throw err
-      // console.log(apiResponse)
+    controller.register(user, function (err, apiResponse) {
+      if (err) throw err
+      console.log(apiResponse)
+      process.exit()
     })
     // controller.login('does@not.exist', 'invalid', 'requestSignature', function (err, apiResponse) {
     //   if (err) throw err

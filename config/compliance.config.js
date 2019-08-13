@@ -5,7 +5,7 @@ const complianceConfig = {
   maxLoginAttempts: 3, // maximum number of failed login attempts for valid user
   maxBFLoginAttempts: 5, // maximum number of failed login attempts for any user using the same request signature
   permanentLockTime: 99 * 60 * 60 * 1000, // lock user account for 99 years
-  bruteForcelockoutTime: 2 * 60 * 1000 // prevent login for 2 minutes if brute force detected
+  bruteForceLockoutTime: 2 * 60 * 1000 // prevent login for 2 minutes if brute force detected
 }
 
 module.exports = complianceConfig
