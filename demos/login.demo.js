@@ -18,6 +18,8 @@ mongoose.connect(connectionString, { useNewUrlParser: true }).then(
       if (err) throw err
       console.log('Login Success! \n')
       console.log(apiResponse)
+      console.log('Session is:')
+      console.log(controller.session)
       process.exit()
     })
   },

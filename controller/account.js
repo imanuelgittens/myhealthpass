@@ -114,6 +114,7 @@ AccountController.prototype.validatePassword = function (user) {
 
 AccountController.prototype.logout = function () {
   if (this.session.userProfileModel) delete this.session.userProfileModel
+  if (this.session.expires) delete this.session.expires
 }
 
 AccountController.prototype.register = function (newUser, callback) {
