@@ -1,7 +1,6 @@
 const chai = require('chai')
 const mongoose = require('mongoose')
 const { expect } = require('chai')
-const { assert } = require('chai')
 const should = chai.should()
 
 const AccountController = require('../controller/account')
@@ -10,6 +9,7 @@ const ApiMessages = require('../models/api-messages.js')
 const User = require('../models/user')
 const FailedLogin = require('../models/failed-logins')
 const { bruteForceLockoutTime } = require('../config/compliance.config')
+const { maxBFLoginAttempts } = require('../config/compliance.config')
 let controller = {}
 const session = {}
 
@@ -97,7 +97,7 @@ describe('Brute Force Functionality', function () {
     mongoose.connection.collections.failedlogins.drop().then(function () {
       const failedLogin = new FailedLogin({
         reqSignature: 'bruteforcedemo',
-        loginAttempts: 5,
+        loginAttempts: maxBFLoginAttempts,
         lockUntil: Date.now() + bruteForceLockoutTime
       })
       failedLogin.save().then(function () {

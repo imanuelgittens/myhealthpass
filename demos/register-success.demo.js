@@ -5,21 +5,21 @@ const User = require('../models/user')
 
 mongoose.connect(connectionString, { useNewUrlParser: true }).then(
   function () {
-    const userData = {
-      email: `hello@example${Math.floor(Math.random() * 1000)}.com`, // add random number in email because it should be unique
-      firstName: 'John',
-      lastName: 'Doe',
-      password: 'helloH1234'
-    }
+    const session = {}
 
-    const user = new User(userData)
-
-    const controller = new AccountController(User, {})
-
-    controller.register(user, function (err, apiResponse) {
-      if (err) throw err
-      console.log(apiResponse)
-      process.exit()
+    const controller = new AccountController(User, session)
+    mongoose.connection.collections.users.drop().then(function () {
+      const testUser = new User({
+        email: `hello@newexample${Math.floor(Math.random() * 1000)}.com`, // add random number in email because it should be unique
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'Hello1234'
+      })
+      const registerPromise = controller.register(testUser).catch((err) => err)
+      registerPromise.then(function (result) {
+        console.log(result)
+        process.exit()
+      })
     })
   },
   function (err) {

@@ -22,7 +22,7 @@ mongoose.connect(connectionString, { useNewUrlParser: true }).then(
     console.log('Session is: \n')
 
     console.log(controller.session)
-    console.log('Loggin out..')
+    console.log('Logging out..')
     controller.logout()
     console.log('Session is: \n')
     console.log(controller.session)

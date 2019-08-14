@@ -5,22 +5,27 @@ const User = require('../models/user')
 
 mongoose.connect(connectionString, { useNewUrlParser: true }).then(
   function () {
-    const userLoginData = {
-      email: 'hello@example.com',
-      password: 'Hello1234'
-    }
+    const email = 'hello@example.com'
+    const password = 'Hello1234'
+    const signature = 'demorequestSignature'
 
-    const user1 = new User(userLoginData)
+    const session = {}
 
-    const controller = new AccountController(User, {})
-
-    controller.login(user1.email, user1.password, 'requestSignature', function (err, apiResponse) {
-      if (err) throw err
-      console.log('Login Success! \n')
-      console.log(apiResponse)
-      console.log('Session is:')
-      console.log(controller.session)
-      process.exit()
+    const controller = new AccountController(User, session)
+    mongoose.connection.collections.users.drop().then(function () {
+      const testUser = new User({
+        email: `hello@example.com`,
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'Hello1234'
+      })
+      testUser.save().then(function () {
+        const loginPromise = controller.login(email, password, signature).catch((err) => err)
+        loginPromise.then(function (result) {
+          console.log(result)
+          process.exit()
+        })
+      })
     })
   },
   function (err) {
