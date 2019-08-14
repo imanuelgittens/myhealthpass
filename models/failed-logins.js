@@ -42,4 +42,10 @@ FailedLoginSchema.methods.incLoginAttempts = function (cb) {
   return this.update(updates, cb)
 }
 
+FailedLoginSchema.methods.resetLoginAttempts = function () {
+  return this.updateOne({
+    $set: { loginAttempts: 1 }
+  })
+}
+
 module.exports = mongoose.model('FailedLogin', FailedLoginSchema)

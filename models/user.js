@@ -63,7 +63,6 @@ UserSchema.methods.comparePassword = function (candidatePassword, cb) {
 }
 
 UserSchema.methods.incLoginAttempts = function (cb) {
-  console.log(typeof permanentLockTime)
   // if we have a previous lock that has expired, restart at 1
   if (this.lockUntil && this.lockUntil < Date.now()) {
     return this.updateOne({
@@ -78,6 +77,12 @@ UserSchema.methods.incLoginAttempts = function (cb) {
     updates.$set = { lockUntil: Date.now() + permanentLockTime }
   }
   return this.update(updates, cb)
+}
+
+UserSchema.methods.resetLoginAttempts = function () {
+  return this.updateOne({
+    $set: { loginAttempts: 1 }
+  })
 }
 
 module.exports = mongoose.model('User', UserSchema)

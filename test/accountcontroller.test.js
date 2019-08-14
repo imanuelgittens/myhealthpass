@@ -10,6 +10,8 @@ const User = require('../models/user')
 const FailedLogin = require('../models/failed-logins')
 const { bruteForceLockoutTime } = require('../config/compliance.config')
 const { maxBFLoginAttempts } = require('../config/compliance.config')
+const { permanentLockTime } = require('../config/compliance.config')
+const { maxLoginAttempts } = require('../config/compliance.config')
 let controller = {}
 const session = {}
 
@@ -109,10 +111,10 @@ describe('Brute Force Functionality', function () {
     controller.checkBruteForce.should.be.a('function')
   })
   it('should register a valid failedLogin signature', function (done) {
-    const reguestSignature = 'demorequestSignature'
+    const reguestSignature = `demorequestSignature${Math.floor(Math.random() * 1000)}.com`
     const failedLoginPromise = controller.checkBruteForce(reguestSignature).catch((err) => err)
     failedLoginPromise.then(function (result) {
-      result.success.should.equal(true)
+      result.should.equal(false)
       done()
     })
   })
@@ -124,19 +126,38 @@ describe('Brute Force Functionality', function () {
       done()
     })
   })
+  it('should return false if brute force not detected', function (done) {
+    const reguestSignature = 'demorequestSignature'
+    const failedLoginPromise = controller.checkBruteForce(reguestSignature).catch((err) => err)
+    failedLoginPromise.then(function (result) {
+      result.should.equal(false)
+      done()
+    })
+  })
 })
 
 describe('Login Functionality', function () {
   before(function (done) {
     controller = new AccountController(User, session)
     mongoose.connection.collections.users.drop().then(function () {
+      const users = []
       const testUser = new User({
         email: `hello@example.com`,
         firstName: 'John',
         lastName: 'Doe',
         password: 'Hello1234'
       })
-      testUser.save().then(function () {
+      const testLockedUser = new User({
+        email: `locked@example.com`,
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'Hello1234',
+        loginAttempts: maxLoginAttempts,
+        lockUntil: Date.now() + permanentLockTime
+      })
+      users.push(testUser)
+      users.push(testLockedUser)
+      User.create(users).then(function () {
         done()
       })
     })
@@ -177,6 +198,19 @@ describe('Login Functionality', function () {
     loginPromise.then(function (result) {
       result.success.should.equal(false)
       result.extras.msg.should.equal(ApiMessages.INVALID_PWD)
+      done()
+    })
+  })
+
+  it('should return an error if valid user account locked', function (done) {
+    const email = 'locked@example.com'
+    const password = 'Hello1234'
+    const signature = 'demorequestSignature'
+
+    const loginPromise = controller.login(email, password, signature).catch((err) => err)
+    loginPromise.then(function (result) {
+      result.success.should.equal(false)
+      result.extras.msg.should.equal(ApiMessages.ACCOUNT_LOCKED)
       done()
     })
   })
