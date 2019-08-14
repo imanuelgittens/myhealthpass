@@ -1,4 +1,3 @@
-this.bcrypt = require('bcryptjs')
 const chai = require('chai')
 const mongoose = require('mongoose')
 const { expect } = require('chai')
@@ -9,16 +8,24 @@ const AccountController = require('../controller/account')
 
 const ApiMessages = require('../models/api-messages.js')
 const User = require('../models/user')
-
+const FailedLogin = require('../models/failed-logins')
+const { bruteForceLockoutTime } = require('../config/compliance.config')
 let controller = {}
 const session = {}
 
 describe('Registration Functionality', function () {
   before(function (done) {
-    const User = require('../models/user')
     controller = new AccountController(User, session)
-    mongoose.connection.collections.users.drop(() => {
-      done() // go ahead everything is done now.
+    mongoose.connection.collections.users.drop().then(function () {
+      const testUser = new User({
+        email: `hello@example.com`,
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'Hello1234'
+      })
+      testUser.save().then(function () {
+        done()
+      })
     })
   })
   it('should be a function', function () {
@@ -27,7 +34,7 @@ describe('Registration Functionality', function () {
 
   it('should register a valid user', function (done) {
     const testUser = new User({
-      email: `hello@example.com`,
+      email: `hello@newexample${Math.floor(Math.random() * 1000)}.com`, // add random number in email because it should be unique
       firstName: 'John',
       lastName: 'Doe',
       password: 'Hello1234'
@@ -40,7 +47,7 @@ describe('Registration Functionality', function () {
   })
 
   it('should return an error if user exists', function (done) {
-    const testUser = new User({ // assume this test user is already in database
+    const testUser = new User({ // this test user is already in database
       email: 'hello@example.com',
       firstName: 'John',
       lastName: 'Doe',
@@ -84,66 +91,116 @@ describe('Registration Functionality', function () {
   })
 })
 
-// describe('Login Functionality', function () {
-//   const testUser = { // assume this test user is already in database
-//     email: `hello@example.com`,
-//     password: 'Hello1234'
-//   }
+describe('Brute Force Functionality', function () {
+  before(function (done) {
+    controller = new AccountController(User, session)
+    mongoose.connection.collections.failedlogins.drop().then(function () {
+      const failedLogin = new FailedLogin({
+        reqSignature: 'bruteforcedemo',
+        loginAttempts: 5,
+        lockUntil: Date.now() + bruteForceLockoutTime
+      })
+      failedLogin.save().then(function () {
+        done()
+      })
+    })
+  })
+  it('should be a function', function () {
+    controller.checkBruteForce.should.be.a('function')
+  })
+  it('should register a valid failedLogin signature', function (done) {
+    const reguestSignature = 'demorequestSignature'
+    const failedLoginPromise = controller.checkBruteForce(reguestSignature).catch((err) => err)
+    failedLoginPromise.then(function (result) {
+      result.success.should.equal(true)
+      done()
+    })
+  })
+  it('should return true if brute force detected', function (done) {
+    const reguestSignature = 'bruteforcedemo'
+    const failedLoginPromise = controller.checkBruteForce(reguestSignature).catch((err) => err)
+    failedLoginPromise.then(function (result) {
+      result.should.equal(true)
+      done()
+    })
+  })
+})
 
-//   beforeEach(function (done) {
-//     const User = require('../models/user')
-//     controller = new AccountController(User, session)
-//     done()
-//   })
-//   it('should be a function', function () {
-//     controller.login.should.be.a('function')
-//   })
-//   // it('Should create a user session when successful', function () {
-//   //   controller.login(testUser.email, testUser.pass, 'requestsignature', function (err, ApiResponse) {
-//   //     if (err) throw err
-//   //     ApiResponse.success.should.equal(true)
-//   //     expect(ApiMessages.extras.userProfileModel).to.equal(controller.getSession().userProfileModel)
-//   //   }
-//   //   )
-//   // })
-//   // it('should return "Email not found"', function () {
-//   //   controller.login('does@not.exist', testUser.pass, 'requestsignature', function (err, ApiResponse) {
-//   //     if (err) throw err
-//   //     ApiResponse.success.should.equal(false)
-//   //     ApiResponse.extras.msg.should.equal(ApiMessages.EMAIL_NOT_FOUND)
-//   //   })
-//   // })
-//   // it('should return "Invalid Password"', function () {
-//   //   controller.login(testUser.email, 'invalidPassword', 'requestsignature', function (err, ApiResponse) {
-//   //     if (err) throw err
-//   //     ApiResponse.success.should.equal(false)
-//   //     ApiResponse.extras.msg.should.equal(ApiMessages.INVALID_PWD)
-//   //   })
-//   // })
-//   // it('should return "Database Error" for locked user accounts', function () {
-//   //   controller.login(testUser.email, testUser.pass, 'requestsignature', function (err, ApiResponse) {
-//   //     if (err) throw err
-//   //     ApiResponse.success.should.equal(false)
-//   //     ApiResponse.extras.msg.should.equal(ApiMessages.DB_ERROR)
-//   //   })
-//   // })
-// })
+describe('Login Functionality', function () {
+  before(function (done) {
+    controller = new AccountController(User, session)
+    mongoose.connection.collections.users.drop().then(function () {
+      const testUser = new User({
+        email: `hello@example.com`,
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'Hello1234'
+      })
+      testUser.save().then(function () {
+        done()
+      })
+    })
+  })
+  it('should be a function', function () {
+    controller.login.should.be.a('function')
+  })
+  it('should return an error if bruteforce detected', function (done) {
+    const email = 'hello@example.com'
+    const password = 'Hello1234'
+    const signature = 'bruteforcedemo'
 
-// describe('Brute Force Functionality', function () {
-//   beforeEach(function (done) {
-//     const failedLogin = require('../models/failed-logins')
-//     controller = new AccountController(User, session)
-//     done()
-//   })
-//   it('should be a function', function () {
-//     controller.checkBruteForce.should.be.a('function')
-//   })
-// })
+    const loginPromise = controller.login(email, password, signature).catch((err) => err)
+    loginPromise.then(function (result) {
+      result.success.should.equal(false)
+      result.extras.msg.should.equal(ApiMessages.LOGIN_PREVENTED)
+      done()
+    })
+  })
+  it('should return an error if user not found', function (done) {
+    const email = 'not@found.com'
+    const password = 'Hello1234'
+    const signature = 'demorequestSignature'
 
-// describe('Logout Functionality', function () {
-//   it('should destroy a user session', function () {
-//     controller.logout()
-//     const sessionTest = controller.getSession().userProfileModel
-//     expect(sessionTest).to.be.undefined
-//   })
-// })
+    const loginPromise = controller.login(email, password, signature).catch((err) => err)
+    loginPromise.then(function (result) {
+      result.success.should.equal(false)
+      result.extras.msg.should.equal(ApiMessages.EMAIL_NOT_FOUND)
+      done()
+    })
+  })
+  it('should return an error if password incorrect', function (done) {
+    const email = 'hello@example.com'
+    const password = 'incorrectPassword'
+    const signature = 'demorequestSignature'
+
+    const loginPromise = controller.login(email, password, signature).catch((err) => err)
+    loginPromise.then(function (result) {
+      result.success.should.equal(false)
+      result.extras.msg.should.equal(ApiMessages.INVALID_PWD)
+      done()
+    })
+  })
+  it('should login a valid user', function (done) {
+    const email = 'hello@example.com'
+    const password = 'Hello1234'
+    const signature = 'demorequestSignature'
+
+    const loginPromise = controller.login(email, password, signature).catch((err) => err)
+    loginPromise.then(function (result) {
+      result.success.should.equal(true)
+      done()
+    })
+  })
+})
+
+describe('Logout Functionality', function () {
+  before(function (done) {
+    controller = new AccountController(User, session)
+    done()
+  })
+  it('should destroy a user session', function () {
+    controller.logout()
+    const sessionTest = controller.getSession().userProfileModel
+    expect(sessionTest).to.be.undefined
+  })
+})
