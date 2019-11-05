@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "bcryptjs": "2.4.3",
-    "mongoose": "5.6.9",
+    "mongoose": "5.7.5",
     "validator": "11.1.0"
   }
 }
